@@ -2,6 +2,7 @@ import argparse
 import random
 from functools import partial
 from pathlib import Path
+from typing import Optional
 
 import soundfile
 import torch
@@ -16,7 +17,7 @@ from .denoiser import Denoiser
 from .hparams import HParams
 
 
-def load_G(run_dir: Path, hp: HParams | None = None, training=True):
+def load_G(run_dir: Path, hp: Optional[HParams] = None, training=True):
     if hp is None:
         hp = HParams.load(run_dir)
     assert isinstance(hp, HParams)

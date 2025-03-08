@@ -37,12 +37,10 @@ resemble-enhance in_dir out_dir
 resemble-enhance in_dir out_dir --denoise_only
 ```
 
-### Web Demo
-
-We provide a web demo built with Gradio, you can try it out [here](https://huggingface.co/spaces/ResembleAI/resemble-enhance), or also run it locally:
+### My Demo
 
 ```
-python app.py
+python app.py input.wav output.wav --solver rk4 --nfe 100 --tau 0.7 --denoise
 ```
 
 ## Train your own model

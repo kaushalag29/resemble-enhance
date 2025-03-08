@@ -7,6 +7,7 @@ from torch import Tensor, nn
 from ..melspec import MelSpectrogram
 from .hparams import HParams
 from .unet import UNet
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ class Denoiser(nn.Module):
         sep_sin = sin * cos_res + cos * sin_res
         return sep_mag, sep_cos, sep_sin
 
-    def forward(self, x: Tensor, y: Tensor | None = None):
+    def forward(self, x: Tensor, y: Optional[Tensor] = None):
         """
         Args:
             x: (b t), a mixed audio

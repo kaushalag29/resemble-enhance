@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from functools import partial
-from typing import Protocol
+from typing import Protocol, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -270,7 +270,7 @@ class CFM(nn.Module):
             global_dim=self.time_emb_dim,
         )
 
-    def _perturb(self, ψ1: Tensor, t: Tensor | None = None):
+    def _perturb(self, ψ1: Tensor, t: Optional[Tensor] = None):
         """
         Perturb ψ1 to ψt.
         """
@@ -310,7 +310,7 @@ class CFM(nn.Module):
         """
         return ψ1 - ψ0
 
-    def _to_v(self, *, ψt, x, t: float | Tensor):
+    def _to_v(self, *, ψt, x, t: Union[float, Tensor]):
         """
         Args:
             ψt: (b c t)
@@ -363,7 +363,7 @@ class CFM(nn.Module):
         ψ1 = self.solver(f=f, ψ0=ψ0, t0=t0)
         return ψ1
 
-    def forward(self, x: Tensor, y: Tensor | None = None, ψ0: Tensor | None = None, t0=0.0):
+    def forward(self, x: Tensor, y: Optional[Tensor] = None, ψ0: Optional[Tensor] = None, t0=0.0):
         if y is None:
             y = self.sample(x, ψ0=ψ0, t0=t0)
         else:

@@ -3,6 +3,7 @@ import random
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
+from typing import Union
 
 import librosa
 import numpy as np
@@ -16,7 +17,7 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class RandomRIR(Effect):
-    rir_dir: Path | None
+    rir_dir: Union[Path, None]
     rir_rate: int = 44_000
     rir_suffix: str = ".npy"
     deterministic: bool = False

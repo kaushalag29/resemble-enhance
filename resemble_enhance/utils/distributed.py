@@ -1,7 +1,7 @@
 import os
 import socket
 from functools import cache, partial, wraps
-from typing import Callable
+from typing import Callable, Union
 
 import deepspeed
 import torch
@@ -51,7 +51,7 @@ def is_global_leader():
     return global_rank() == 0
 
 
-def leader_only(leader_only_type, fn: Callable | None = None, boardcast_return=False) -> Callable:
+def leader_only(leader_only_type, fn: Union[Callable, None] = None, boardcast_return=False) -> Callable:
     """
     Args:
         fn: The function to decorate

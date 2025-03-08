@@ -1,9 +1,9 @@
 import json
 import logging
 import time
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol, Union, Optional
 
 import torch
 from torch import Tensor
@@ -30,35 +30,30 @@ class GenFeeder(Protocol):
 
 
 class DisFeeder(Protocol):
-    def __call__(self, engine: Engine, batch: dict[str, Tensor] | None, fake: Tensor) -> dict[str, Tensor]: ...
+    def __call__(self, engine: Engine, batch: Union[dict[str, Tensor], None], fake: Tensor) -> dict[str, Tensor]: ...
 
 
 @dataclass
 class TrainLoop:
-    _ = KW_ONLY
-
     run_dir: Path
     train_dl: DataLoader
-
     load_G: EngineLoader
     feed_G: GenFeeder
-    load_D: EngineLoader | None = None
-    feed_D: DisFeeder | None = None
-
+    load_D: Optional[EngineLoader] = None
+    feed_D: Optional[DisFeeder] = None
     update_every: int = 5_000
     eval_every: int = 5_000
     backup_steps: tuple[int, ...] = (5_000, 100_000, 500_000)
-
     device: str = "cuda"
-    eval_fn: EvalFn | None = None
-    gan_training_start_step: int | None = None
+    eval_fn: Optional[EvalFn] = None
+    gan_training_start_step: Optional[int] = None
 
     @property
     def global_step(self):
         return self.engine_G.global_step  # How many steps have been completed?
 
     @property
-    def eval_dir(self) -> Path | None:
+    def eval_dir(self) -> Union[Path, None]:
         if self.eval_every != 0:
             eval_dir = self.run_dir.joinpath("eval")
             eval_dir.mkdir(exist_ok=True)
@@ -238,20 +233,20 @@ class TrainLoop:
         cls._running_loop = loop
 
     @classmethod
-    def get_running_loop(cls) -> "TrainLoop | None":
+    def get_running_loop(cls) -> Union["TrainLoop", None]:
         if hasattr(cls, "_running_loop"):
             assert isinstance(cls._running_loop, cls)
             return cls._running_loop
         return None
 
     @classmethod
-    def get_running_loop_global_step(cls) -> int | None:
+    def get_running_loop_global_step(cls) -> Union[int, None]:
         if loop := cls.get_running_loop():
             return loop.global_step
         return None
 
     @classmethod
-    def get_running_loop_viz_path(cls, name: str, suffix: str) -> Path | None:
+    def get_running_loop_viz_path(cls, name: str, suffix: str) -> Union[Path, None]:
         if loop := cls.get_running_loop():
             return loop.make_current_step_viz_path(name, suffix)
         return None

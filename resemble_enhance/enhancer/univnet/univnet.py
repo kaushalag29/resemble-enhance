@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.nn.utils.parametrizations import weight_norm
+from typing import Optional
 
 from ..hparams import HParams
 from .lvcnet import LVCBlock
@@ -64,7 +65,7 @@ class UnivNet(nn.Module):
     def eps(self):
         return 1e-5
 
-    def forward(self, x: Tensor, y: Tensor | None = None, npad=10):
+    def forward(self, x: Tensor, y: Optional[Tensor] = None, npad=10):
         """
         Args:
             x: (b c t), acoustic features

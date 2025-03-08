@@ -1,6 +1,7 @@
-import gradio as gr
+import argparse
 import torch
 import torchaudio
+import os
 
 from resemble_enhance.enhancer.inference import denoise, enhance
 
@@ -9,51 +10,38 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-
-def _fn(path, solver, nfe, tau, denoising):
-    if path is None:
-        return None, None
-
+def process_audio(input_path, output_path, solver, nfe, tau, denoising):
+    if not os.path.isfile(input_path):
+        print(f"Error: File '{input_path}' not found.")
+        return
+    
     solver = solver.lower()
     nfe = int(nfe)
     lambd = 0.9 if denoising else 0.1
 
-    dwav, sr = torchaudio.load(path)
+    dwav, sr = torchaudio.load(input_path)
     dwav = dwav.mean(dim=0)
 
-    wav1, new_sr = denoise(dwav, sr, device)
-    wav2, new_sr = enhance(dwav, sr, device, nfe=nfe, solver=solver, lambd=lambd, tau=tau)
-
-    wav1 = wav1.cpu().numpy()
-    wav2 = wav2.cpu().numpy()
-
-    return (new_sr, wav1), (new_sr, wav2)
-
+    if denoising:
+        dwav, sr = denoise(dwav, sr, device)
+    
+    enhanced_wav, new_sr = enhance(dwav, sr, device, nfe=nfe, solver=solver, lambd=lambd, tau=tau)
+    
+    torchaudio.save(output_path, enhanced_wav.unsqueeze(0).cpu(), new_sr)
+    print(f"Enhanced audio saved at: {output_path}")
 
 def main():
-    inputs: list = [
-        gr.Audio(type="filepath", label="Input Audio"),
-        gr.Dropdown(choices=["Midpoint", "RK4", "Euler"], value="Midpoint", label="CFM ODE Solver"),
-        gr.Slider(minimum=1, maximum=128, value=64, step=1, label="CFM Number of Function Evaluations"),
-        gr.Slider(minimum=0, maximum=1, value=0.5, step=0.01, label="CFM Prior Temperature"),
-        gr.Checkbox(value=False, label="Denoise Before Enhancement"),
-    ]
-
-    outputs: list = [
-        gr.Audio(label="Output Denoised Audio"),
-        gr.Audio(label="Output Enhanced Audio"),
-    ]
-
-    interface = gr.Interface(
-        fn=_fn,
-        title="Resemble Enhance",
-        description="AI-driven audio enhancement for your audio files, powered by Resemble AI.",
-        inputs=inputs,
-        outputs=outputs,
-    )
-
-    interface.launch()
-
+    parser = argparse.ArgumentParser(description="CLI tool for AI-driven audio enhancement.")
+    parser.add_argument("input", type=str, help="Path to the input audio file")
+    parser.add_argument("output", type=str, help="Path to save the enhanced audio file")
+    parser.add_argument("--solver", type=str, choices=["midpoint", "rk4", "euler"], default="midpoint", help="CFM ODE Solver (default: Midpoint)")
+    parser.add_argument("--nfe", type=int, default=64, help="CFM Number of Function Evaluations (default: 64)")
+    parser.add_argument("--tau", type=float, default=0.5, help="CFM Prior Temperature (default: 0.5)")
+    parser.add_argument("--denoise", action="store_true", help="Apply denoising before enhancement")
+    
+    args = parser.parse_args()
+    
+    process_audio(args.input, args.output, args.solver, args.nfe, args.tau, args.denoise)
 
 if __name__ == "__main__":
     main()

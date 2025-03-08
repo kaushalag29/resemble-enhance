@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import torch
@@ -109,7 +110,7 @@ class LCFM(nn.Module):
     def eval_tau_(self, tau):
         self._eval_tau = tau
 
-    def forward(self, x, y: Tensor | None = None, ψ0: Tensor | None = None):
+    def forward(self, x, y: Optional[Tensor] = None, ψ0: Optional[Tensor] = None):
         """
         Args:
             x: (b d t), condition mel
