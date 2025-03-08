@@ -41,6 +41,9 @@ resemble-enhance in_dir out_dir --denoise_only
 
 ```
 python app.py input.wav output.wav --solver rk4 --nfe 100 --tau 0.7 --denoise
+
+[Default Settings]
+python app.py input.wav output.wav --solver midpoint --nfe 64 --tau 0.5 --denoise
 ```
 
 ## Train your own model
