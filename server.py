@@ -63,6 +63,11 @@ async def enhance_audio(request: EnhanceRequest):
         logger.error(f"Error enhancing audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error enhancing audio: {str(e)}")
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "model": "resemble-enhance", "device": device}
+
 @app.post("/shutdown")
 async def shutdown():
     logger.info("Shutdown request received")
@@ -71,4 +76,7 @@ async def shutdown():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8014) 
+    # Port is configurable via environment variable
+    port = int(os.environ.get("PORT", 8014))
+    logger.info(f"Starting Resemble Enhance server on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port) 
