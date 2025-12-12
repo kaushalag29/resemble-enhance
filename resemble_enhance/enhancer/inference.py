@@ -20,7 +20,19 @@ def load_enhancer(run_dir: str | Path | None, device):
     state_dict = torch.load(path, map_location="cpu")["module"]
     enhancer.load_state_dict(state_dict)
     enhancer.eval()
-    enhancer.to(device)
+
+    # GPU error handling - fallback to CPU if GPU is busy or unavailable
+    try:
+        enhancer.to(device)
+    except RuntimeError as e:
+        if "CUDA" in str(e):
+            logger.warning(f"GPU busy or unavailable: {e}. Falling back to CPU")
+            torch.cuda.empty_cache()
+            device = 'cpu'
+            enhancer.to(device)
+        else:
+            raise
+
     return enhancer
 
 
