@@ -2,12 +2,12 @@ import torch
 import torchaudio
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from resemble_enhance.enhancer.inference import enhance
+from resemble_enhance.enhancer.inference import enhance, load_enhancer
+from resemble_enhance.denoiser.inference import load_denoiser
 import os
 import logging
 import signal
-
-app = FastAPI(title="Resemble Enhance API")
+from contextlib import asynccontextmanager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +19,36 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 logger.info(f"Using device: {device}")
+
+# Global model instances (loaded at startup)
+enhancer_model = None
+denoiser_model = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown lifecycle management"""
+    global enhancer_model, denoiser_model
+
+    # Startup - preload models to avoid CUDA busy errors during first request
+    logger.info("Preloading Resemble Enhance models at startup...")
+    try:
+        enhancer_model = load_enhancer(None, device)
+        logger.info(f"Enhancer model loaded successfully on {device}")
+
+        denoiser_model = load_denoiser(None, device)
+        logger.info(f"Denoiser model loaded successfully on {device}")
+    except Exception as e:
+        logger.error(f"Failed to preload models: {e}", exc_info=True)
+        # Continue startup even if preload fails - models will load on first request
+
+    yield
+
+    # Shutdown cleanup
+    logger.info("Cleaning up models...")
+    enhancer_model = None
+    denoiser_model = None
+
+app = FastAPI(title="Resemble Enhance API", lifespan=lifespan)
 
 class EnhanceRequest(BaseModel):
     input_path: str
